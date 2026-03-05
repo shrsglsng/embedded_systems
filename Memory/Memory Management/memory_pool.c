@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/*Dynamic Memory Pool*/
+
 typedef struct
 {
     uint8_t *pool; // ptr to first byte of entire mem pool
@@ -74,6 +76,37 @@ void mem_pool_free(mem_pool_t *pool, void *ptr)
 
     pool->free_list = ptr;
     pool->free_count++;
+}
+
+/* Static Memory Pool */
+
+#define SENSOR_SIZE 32
+#define MAX_SENSORS 16
+
+static uint8_t sensor_pool[SENSOR_SIZE * MAX_SENSORS];
+static bool pool_used[MAX_SENSORS] = {false};
+
+uint8_t *allocate_buffer()
+{
+    for (int i = 0; i < MAX_SENSORS; i++)
+    {
+        if (pool_used[i] == false)
+        {
+            pool_used[i] = true;
+            return &sensor_pool[i * SENSOR_SIZE];
+        }
+    }
+    return NULL;
+}
+
+void free_buffer(uint8_t *buffer){  //here buffer is pointing to mem sizeof(SENSOR_SIZE)
+    if(buffer == NULL)return;
+
+    size_t index = (buffer - sensor_pool) / SENSOR_SIZE;
+
+    if(index < MAX_SENSORS){
+        pool_used[i] = flase;   //buffer is freed by just setting its respective index as false in tracking array
+    }
 
 }
 

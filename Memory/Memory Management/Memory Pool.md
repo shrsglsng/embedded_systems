@@ -12,6 +12,12 @@ uint8_t *current;
 *(uint8_t **)current = pool-->free_next;
 ```
 
+Code Design:
+
+1) Create a macro for SENSOR_SIZE and MAX_SENSORS
+2) Statically / Dynamically alloc memory using above macros
+3) Create a 'status-tracking' array  --status array
+4) Alloc / Dealloc based based on status array
 
 
 
