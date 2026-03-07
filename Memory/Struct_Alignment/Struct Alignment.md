@@ -5,9 +5,13 @@ Struct Padding: Compiler inserts empty bytes in-between + @ end to ensure that e
 
 Structure size == multiple of the largest member
 
+
+==***Struct Alignment Rule: a member of size N must start at an address divisible by N***
+
+
 Insertion Rule:
 1) @middle: insert padding in between elements until you reach multiple of 4 (for 32-bit systems)
-2) @end: insert padding at the end to match the sizeof the largest member
+2) @end: insert padding at the end to match the sizeof the largest member (**ensures array alignment**) 
 
 Another Perspective: Think in terms of ***offset*** . Optimal scenario; the N-th element must be offset i.e a multiple of 4.
 
@@ -58,13 +62,75 @@ typedef struc{
 
 - Reason DMA requires mem alignment; unlike CPU (that can overwork for multiple reads) DMA is a 'dumb-but-fast data mover'. It expects the data to be a perfect grid
 
-- Alignment for DMA burst transfers: DMA can transfer 4, 8, 16 words in one continous stream
+- Alignment for DMA burst transfers: DMA can transfer 4, 8, 16 words in one continuous stream. For this the data must be aligned, else the DMA will slow down and start single transfers.
+
+- Cache Line Coherency (32 **Byte** rule):  Higher end mcu's M7 and Cortex A uses Caches. Caches dont know about individual variables; they only know cache lines (32 **Bytes** chunk). So in a case where the data is not 32 **Byte** aligned, this happens
+
+![[Pasted image 20260306203142.png]]
+
+
+- Misalignment causes Bus 'Contention': Bus is a common route taken by CPU and DMA to reach RAM. The more cycles DMA takes more the CPU is stalled.
+
+==> Data Packing:
+
+- C cmd to eliminate padding:
+
+```c
+__attribute__((packed))
+```
+
+- Data packing trade-offs memory for speed
+
+- It is generally used in extreme mem constraint systems like networking protocols, Deserialisation etc
+
+Example
+
+```c
+typedef struct{
+    uint16_t source_port;      // 2 bytes
+    uint16_t dest_port;        // 2 bytes
+    uint32_t sequence_num;     // 4 bytes
+    uint32_t ack_num;          // 4 bytes
+    uint16_t flags;            // 2 bytes
+    uint16_t window_size;      // 2 bytes
+    uint16_t checksum;         // 2 bytes
+    uint16_t urgent_ptr;       // 2 bytes
+}__attribute__((packed)) tcp_header_t;
+```
 
 
 
+==> Endians
 
+- in a multi-byte value  the endian refers to the order in which the bytes are stored.
 
+- Little Endian: LSB first
+- Big Endian: MSB First
 
+	- Usualyy Network bytes are Big Endian (to remember; high priority bytes are transmitter first)
+
+Checking Endian;
+
+```c
+bool is_little_endian(){
+
+	uint16_t value = 0x102;     //bit reperesentation 00000001 00000010
+	
+	return (*(uint8_t)&value == 0x2);   // remember to cast the &value not value
+}
+```
+
+Alternate Method
+```c
+bool is_littl_endian(){
+	uinon{
+		uint16_t value;
+		uint8_t bytes[2];
+	}test_u = {0x102};
+	
+	return test_u.bytes[0] == 0x2;
+}
+```
 
 
 
